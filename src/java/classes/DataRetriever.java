@@ -9,33 +9,32 @@ public class DataRetriever {
         this.dbConnection = dbConnection;
     }
 
-    public List<PieceParMarque> getPiecesParMarque(Connection connection)  {
+    public List<PieceParMarque> findPiecesParMarque() {
+        List<PieceParMarque> list = new ArrayList<>();
 
-        List<PieceParMarque> resultat = new ArrayList<>();
+        try (Connection connection = dbConnection.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(
+                     "SELECT Modele_voiture.marque, SUM(Vente.quantite) AS nbre_piece " +
+                             "FROM Vente " +
+                             "JOIN Piece_auto ON Vente.id_piece_auto = Piece_auto.id " +
+                             "JOIN Modele_voiture ON Piece_auto.id_modele_voiture = Modele_voiture.id " +
+                             "GROUP BY Modele_voiture.marque"
+             );
+             ResultSet resultSet = preparedStatement.executeQuery()) {
 
-        String sql = """
-        SELECT Modele_voiture.marque,
-               SUM(Vente.quantite) AS nbre_piece
-        FROM Vente
-        JOIN Piece_auto ON Vente.id_piece_auto = Piece_auto.id
-        JOIN Modele_voiture ON Piece_auto.id_modele_voiture = Modele_voiture.id
-        GROUP BY Modele_voiture.marque
-    """;
+            while (resultSet.next()) {
+                PieceParMarque piece = new PieceParMarque();
+                piece.setMarque(resultSet.getString("marque"));
+                piece.setNbrePiece(resultSet.getInt("nbre_piece"));
+                list.add(piece);
+            }
 
-        Statement statement = connection.createStatement();
-        ResultSet resultSet = statement.executeQuery(sql);
-
-        while (resultSet.next()) {
-
-            PieceParMarque piece = new PieceParMarque();
-
-            piece.setMarque(resultSet.getString("marque"));
-            piece.setNbrePiece(resultSet.getInt("nbre_piece"));
-
-            resultat.add(piece);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
         }
 
-        return resultat;
+        return list;
+    }
     }
 
     public List<PieceParMarque> getPiecesParMarque(Connection connection)  {
