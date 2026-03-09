@@ -37,7 +37,7 @@ public class DataRetriever {
     }
     }
 
-public PieceParModele findPiecesParModele() {
+    public PieceParModele findPiecesParModele() {
     PieceParModele piece = new PieceParModele();
 
     try (Connection connection = dbConnection.getConnection();
@@ -63,6 +63,30 @@ public PieceParModele findPiecesParModele() {
     }
 
     return piece;
+}
+
+    public double findPrixTotalKia() {
+    double prixTotal = 0;
+
+    try (Connection connection = dbConnection.getConnection();
+         PreparedStatement preparedStatement = connection.prepareStatement(
+                 "SELECT SUM(Piece_auto.prix * Vente.quantite) AS prix_total " +
+                         "FROM Vente " +
+                         "JOIN Piece_auto ON Vente.id_piece_auto = Piece_auto.id " +
+                         "JOIN Modele_voiture ON Piece_auto.id_modele_voiture = Modele_voiture.id " +
+                         "WHERE Modele_voiture.marque = 'KIA'"
+         );
+         ResultSet resultSet = preparedStatement.executeQuery()) {
+
+        if (resultSet.next()) {
+            prixTotal = resultSet.getDouble("prix_total");
+        }
+
+    } catch (SQLException e) {
+        throw new RuntimeException(e);
+    }
+
+    return prixTotal;
 }
 }
 
